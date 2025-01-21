@@ -40,3 +40,56 @@ npm run build
 ```
 yarn build
 ```
+
+## Данные продуктов из API (GET)
+interface IProduct{
+    id: string,
+    description: string,
+    image: string, 
+    title: string            
+    category: string 
+    price: number
+}
+
+### Данные товра на клавной странице
+type TProductCard = Pick<IProduct, 'category' | 'title' | 'image' | 'price'>;
+
+### Данные товара в модальном окне
+type TProductModal = Pick<IProduct, 'category' | 'title' | 'description' | 'image' | 'price'>
+
+### Данные товара в корзине
+type TProductBasket = Pick <IProduct, 'title' | 'price'>
+
+## Данные для заказа в API(POST)
+interface IOrder{
+    payment: TPaymentType,
+    email: string   
+    phone: string
+    address: string   
+    total: number  
+    items: string[]
+}
+### Тип оплты
+type TPaymentType = 'Online' | 'Offline'
+
+### Модальное окно с методом оплаты и адресом
+type TOrderAddPay = Pick<IOrder, 'payment' | 'address'>
+
+### Модальное окно с вводом почты и номера
+type TOrderMailNum = Pick<IOrder, 'phone' | 'email'>
+
+## Методы для API 
+type TApiMethod = 'GET' | 'POST'
+
+## Типы данных для настроек отображения из верстки
+### Товары                   
+interface IProductSettings{  
+    image: string, 
+    category: string,
+    title: string,
+    text: string,     
+    price: number,
+    formatClass: string,
+    isModal: boolean,
+    isBasket: boolean
+}
