@@ -1,15 +1,19 @@
+// Преобразует PascalCase в kebab-case
 export function pascalToKebab(value: string): string {
     return value.replace(/([a-z0–9])([A-Z])/g, "$1-$2").toLowerCase();
 }
-
+// Проверяет, является ли x строкой-селектором. Перед вызовом querySelector для поиска элементов.
 export function isSelector(x: any): x is string {
     return (typeof x === "string") && x.length > 1;
 }
 
+// Проверяет, является ли значение null или undefined
 export function isEmpty(value: any): boolean {
     return value === null || value === undefined;
 }
 
+
+// Гарантирует, что переданный селектор или элемент приведётся к массиву элементов.
 export type SelectorCollection<T> = string | NodeListOf<Element> | T[];
 
 export function ensureAllElements<T extends HTMLElement>(selectorElement: SelectorCollection<T>, context: HTMLElement = document as unknown as HTMLElement): T[] {
@@ -25,6 +29,7 @@ export function ensureAllElements<T extends HTMLElement>(selectorElement: Select
     throw new Error(`Unknown selector element`);
 }
 
+// Гарантирует, что переданный аргумент является единственным HTMLElement (иначе выбросит ошибку).
 export type SelectorElement<T> = T | string;
 
 export function ensureElement<T extends HTMLElement>(selectorElement: SelectorElement<T>, context?: HTMLElement): T {
@@ -44,11 +49,13 @@ export function ensureElement<T extends HTMLElement>(selectorElement: SelectorEl
     throw new Error('Unknown selector element');
 }
 
+// Находит HTML-шаблон (<template>) и клонирует его содержимое.
 export function cloneTemplate<T extends HTMLElement>(query: string | HTMLTemplateElement): T {
     const template = ensureElement(query) as HTMLTemplateElement;
     return template.content.firstElementChild.cloneNode(true) as T;
 }
 
+// Формирует BEM-классы (block__element_modifier).
 export function bem(block: string, element?: string, modifier?: string): { name: string, class: string } {
     let name = block;
     if (element) name += `__${element}`;
@@ -59,6 +66,7 @@ export function bem(block: string, element?: string, modifier?: string): { name:
     };
 }
 
+// Возвращает список всех методов и свойств объекта, кроме конструктора.
 export function getObjectProperties(obj: object, filter?: (name: string, prop: PropertyDescriptor) => boolean): string[] {
     return Object.entries(
         Object.getOwnPropertyDescriptors(
@@ -98,6 +106,7 @@ export function isPlainObject(obj: unknown): obj is object {
         prototype === null;
 }
 
+// Проверяет, является ли значение true или false
 export function isBoolean(v: unknown): v is boolean {
     return typeof v === 'boolean';
 }

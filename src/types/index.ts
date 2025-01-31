@@ -1,5 +1,7 @@
 
-interface IProduct{
+
+
+export interface IProduct{
     id: string,
     description: string,
     image: string, 
@@ -8,14 +10,19 @@ interface IProduct{
     price: number
 }
 
-type TProductCard = Pick<IProduct, 'category' | 'title' | 'image' | 'price'>;
+export interface IProducts{
+    products: IProduct[];
+    getProduct(productId: string): IProduct;
+}
 
-type TProductModal = Pick<IProduct, 'category' | 'title' | 'description' | 'image' | 'price'>
+export type TProductCard = Pick<IProduct, 'id' | 'category' | 'title' | 'image' | 'price'>;
 
-type TProductBasket = Pick <IProduct, 'title' | 'price'>
+export type TProductModal = Pick<IProduct, 'id' | 'category' | 'title' | 'description' | 'image' | 'price'>
+
+export type TProductBasket = Pick <IProduct, 'id' | 'title' | 'price'>
 
 
-interface IOrder{
+export interface IOrder{
     payment: TPaymentType,
     email: string , 
     phone: string,
@@ -24,18 +31,18 @@ interface IOrder{
     items: string[]
 }
 
-type TPaymentType = 'Online' | 'Offline'
+export type TPaymentType = 'Online' | 'Offline'
 
 
-type TOrderAddPay = Pick<IOrder, 'payment' | 'address'>
+export type TOrderAddPay = Pick<IOrder, 'payment' | 'address'>
 
 
-type TOrderMailNum = Pick<IOrder, 'phone' | 'email'>
+export type TOrderMailNum = Pick<IOrder, 'phone' | 'email'>
 
 
-type TApiMethod = 'GET' | 'POST'
+export type TApiMethod = 'GET' | 'POST'
                 
-interface IProductSettings{  
+export interface IProductSettings{  
     image: string, 
     category: string,
     title: string,
