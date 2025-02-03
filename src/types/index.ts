@@ -1,18 +1,21 @@
-
+import { ApiListResponse } from "../components/base/api";
 
 
 export interface IProduct{
-    id: string,
-    description: string,
-    image: string, 
-    title: string  ,          
-    category: string, 
-    price: number
+    id: string;
+    description: string;
+    image: string;
+    title: string ;         
+    category: string; 
+    price: number | null;
 }
 
 export interface IProducts{
+    total: number;
     products: IProduct[];
-    getProduct(productId: string): IProduct;
+    setProducts(data: ApiListResponse<IProduct>): void;
+    getProductById(productId: string): IProduct;
+    getAllProduct(): IProduct[];
 }
 
 export type TProductCard = Pick<IProduct, 'id' | 'category' | 'title' | 'image' | 'price'>;

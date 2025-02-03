@@ -1,8 +1,9 @@
 
 // ApiModal
-import {Api} from './base/api';
-import{IProduct, IOrder} from '../types/index';
-import {API_URL, CDN_URL, settings} from '../utils/constants'
+import {Api, ApiListResponse} from './base/api';
+import{IProduct, IOrder, IProducts} from '../types/index';
+import {API_URL, CDN_URL, settings} from '../utils/constants';
+import { events } from './base/events';
 
 
 // тип ответа сервера на продукт
@@ -22,7 +23,7 @@ export class ApiProduct extends Api{
     }
 
     // get запрос на получение промиса продуктов:TProductListApi, + изменение item.image.
-    getProductList(): Promise<TProductListApi>{
+    getProductList(): Promise<ApiListResponse<IProduct>>{
         return this.get('/product/')
         .then((itemList : TProductListApi) => ({
             ...itemList,
@@ -31,6 +32,7 @@ export class ApiProduct extends Api{
                 image: this.cdn + item.image
             }))
         }))
+
     }
     // получение по id
     getProductById(id: string):Promise<IProduct>{
@@ -42,7 +44,7 @@ export class ApiProduct extends Api{
     }
 }
 
-export const testApiProductList = new ApiProduct(API_URL,  settings, CDN_URL);
+export const api = new ApiProduct(API_URL,  settings, CDN_URL);
 
 
 // testApiProductList.getProductList().then(productList => {
