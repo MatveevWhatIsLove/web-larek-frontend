@@ -39,256 +39,153 @@ npm run build
 
 ```
 yarn build
-```
-## **Данные и типы данных в приложении**
-### Данные продуктов из API (GET)
-`interface IProduct{
-    id: string,
-    description: string,
-    image: string, 
-    title: string,            
-    category: string, 
-    price: number | null
-}`
-
-#### Данные товра на главной странице
-`type TProductCard = Pick<IProduct, 'category' | 'title' | 'image' | 'price'>;`
-
-#### Данные товара в модальном окне
-`type TProductModal = Pick<IProduct, 'category' | 'title' | 'description' | 'image' | 'price'>`
-
-#### Данные товара в корзине
-`type TProductBasket = Pick <IProduct, 'title' | 'price'>`
-
-### Данные для заказа в API(POST)
-`interface IOrder{
-    payment: TPaymentType,
-    email: string, 
-    phone: string,
-    address: string,   
-    total: number | null,  
-    items: string[]
-}`
-#### Тип оплты
-`type TPaymentType = 'Online' | 'Offline'`
-
-#### Модальное окно с методом оплаты и адресом
-`type TOrderAddPay = Pick<IOrder, 'payment' | 'address'>`
-
-#### Модальное окно с вводом почты и номера
-`type TOrderMailNum = Pick<IOrder, 'phone' | 'email'>`
-
-### Методы для API 
-`type TApiMethod = 'GET' | 'POST'`
-
-### Типы данных для настроек отображения из верстки
-#### Товары                   
-`interface IProductSettings{  
-    image: string, 
-    category: string,
-    title: string,
-    text: string,     
-    price: number | null
-    ,
-    formatClass: string,
-    isModal: boolean,
-    isBasket: boolean
-}`
-
-## **Архитектура приложения**
-    В архитектуре используется принцип **MVP**: логика работы с данными, представлением и взаимодействием между ними четко разделена.
-        **Model** - отвечает за хранение и обработку данных
-        **View** - отвечает за отображенние данных на странице
-        **Presenter** - отвечает за связь между View и Model. 
-    Брокер событий инициализирует события View, вызывая методы Model, которые 'работают' над данными и после вызываются методы View, чтобы отобразить результаты/изменения. Получается, что основная логика находится в Presenter'е.
 
 
+Функции, которые данны изначально:
+    1) Файл events
+        1.1)
+            on<T extends object>(eventName: EventName, callback: (event: T) => void) {
+                if (!this._events.has(eventName)) {
+                    this._events.set(eventName, new Set<Subscriber>());
+                }
+                this._events.get(eventName)?.add(callback);
+            } 
 
+            функция класса event подписки на события, где T - объект-событие.
+            если на чем-то сейчас нет события, то он ставится.
+            ставится обработчик
 
-## **Model**
+            используется функция так, к примеру загрузка файлов с сервера
 
-### 1 API
-    #### 1.1 Класс Api
-        Данный класс является основой для работой с сервером. Класс принимает базовый URl и объект.
-        Класс Api содержит методы:
-            -get - выполняет запрос на сервер по базовому url + uri и возвращает объект, которым ответил сервер
-            -post - выполняет запрос на сервер по базовому url + uri, метод запроса изменяем и зависит от параметра `ApiPostMethods`, а вторым параметром в эту функцию передается объект, который приобразуется в JSON.
+            event.on('dataLoaded', (data)=>{
+                console.log('данные загруженны:', data);
+            })
 
-    #### 1.2 Модель ApiProducts
-        Модель, которая наследует Api, в нем имеется функция, которая возвращает промис товаров
+            мы придумали событие dataLoaded и что будет происходить, когда оно сработает. Но сам по себе он не сработает.
 
-        `getProducts():Promis<Products[]>`
+        1.2)
+            off(eventName: EventName, callback: Subscriber) {
+                if (this._events.has(eventName)) {
+                    this._events.get(eventName)!.delete(callback);
+                    if (this._events.get(eventName)?.size === 0) {
+                        this._events.delete(eventName);
+                    }
+                }
+            }
+            снятие слушателя
+            аналогично с on, но результат - снятие 
+        1.3) 
+            emit<T extends object>(eventName: string, data?: T) {
+                this._events.forEach((subscribers, name) => {
+                    if (name === '*') subscribers.forEach(callback => callback({
+                        eventName,
+                        data
+                    }));
+                    if (name instanceof RegExp && name.test(eventName) || name === eventName) {
+                        subscribers.forEach(callback => callback(data));
+                    }
+                });
+            }
 
-    #### 1.3 Модель ApiOrder
-        Модель, которая наследует Api, и она должна отправлять запрос на сервер с данными заказа(IOrder), также должна вернуться сумма, сколько списалось, и id заказа
+            emit нужен для вызова слушателей, которые поставили.Он перебирает всех подписчиков на событие
+            у нас есть dataLoaded
 
-        postOrder(order: IOrder):Promise<{ id: string, total: number }>
-
-    #### 1.4 Модель Product
-        В этой модели должен храниться массив карточек с сервера согласно интерфейсу IProduct
-
-        items:Array<IProduct>
-
-    #### 1.5 Модель корзины
-        В данной модели хрянтся данные товаров(согласно типу TProductBasket) и сумма, методы, которые позваляют добавлять их, удалять, указывать номера(кол-во), считать стоимость. Добавление и удаление удобнее делать по id. Валидация корзины, чтобы вкл/выкл конпки
-
-        items: Array<TProductBasket> = []
-        price: number = 0
-
-        addProduct(id):void - добавление в корзину
-        deleteProduct(id):void - удаление из корзины
-        countPrice():void - Сумма
-        countProduct(items: Array<TProductBasket>):void - кол-во товаров
-        validationBasket(items: Array<TProductBasket>):boolean
-    #### 1.6 Модель заказа
-        В данной модели происходит хранние данных вводимых пользователям для заказа, сумма заказа и массив товаров. хранится все в объекте интерфейсом IOrder. товары также хранятся по id. Также здесь должна быть валидация.
-
-        order: IOrder = {}
-        payment: TPaymentType,
-        email: string, 
-        phone: string,
-        address: string,   
-        total: number,  
-        items: string[]
-        
-        validatePaymentAddress():boolean
-        setPaymentAddress(TOrderAddPay):void
-        validateEmailPhone():boolean
-        setEmailPhone(TOrderMailNum):void
-
-## **View**
-    #### 1.1 отображение universalElement
-        Это отображение является универсальным для всех отображений: 
-            страница(кол-во товаров в корзине, товары), 
-            сами товары в каталоге, 
-            товары в предпросмотре, 
-            товары в корзине, 
-            модальное окно корзины, 
-            модальное окно форм(тоже универсальный):
-                -форма выбора оплаты и ввода адреса
-                -форма ввода почты и телефона
-            модальное окно успешного закзаа
-
-    universalElement должен сожержать в себе рендер и контейнер, куда будет складываться контент.
-
-    container:HTMLElement - контейнер
-
-    render(data: <T>):HTMLElement - Универсальный рендер
-
-    #### 1.2 Product - универсальный класс для товаров(наследник universalElement)
-
-    Поля: 
-        price, title отображаются во всех видах изображения товара, они обязательные, все остальные опциональны
-        price:HTMLElement
-        title: HTMLElement
-        category?:HTMLElement
-        image?:HTMLElement
-        description?:HTMLElement
-    Методы:
-
-        price(price: number | null) - вставка цены, если null, то "бесценно"
-        title(title:string) - вставка заголовка
-        
-        
-        
-
-        render(product:IProduct) - рендер
-
-    #### 1.2 ProductCatalog - класс наследник Product
-
-        
-        метод category(category:string) - вставка категории
-        image(image:string) - вставка картинки
-    #### 1.3 ProductCheck - класс наследник Product
-
-        category(category:string)
-        description(description: string) - вставка описания
-        image(image:string) - вставка картинки
-    #### 1.4 ProductBasket - класс наследник Product
-
-        count(value:num) - номер товара в корзине
-
-    #### 1.5 Modal - общий класс для модальных окон наслежник universalElement
-        content(element: HTMLElement)
-        open():void
-        close()void
-        render():void
+            после получения данных с сервера мы должны активировать слушатель dataLoaded.
+            поэтому мы пишем event.emit('dataLoaded', data). Указали что произошло(dataLoaded) и данные которые передаем.
+        1.4) 
+            onAll(callback: (event: EmitterEvent) => void) {
+                this.on("*", callback);
+            }
+            Подпишется сразу на все события events. 
+        1.5) 
+            offAll() {
+                this._events = new Map<string, Set<Subscriber>>();
+            }
+            Отпишется
+        1.6) 
+            trigger<T extends object>(eventName: string, context?: Partial<T>) {
+                return (event: object = {}) => {
+                    this.emit(eventName, {
+                        ...(event || {}),
+                        ...(context || {})
+                    });
+                };
+            }
+            Удобно для отображения успеха, ошибок. Т е без работы с данными
+            -Успех (success)
+            -Ошибка (error)
+            -Предупреждение (warning)
+            -Начало или завершение процесса (loading, done)
 
 
 
-    #### 1.6 form - общий класс для формы, наследник Modal
+    2)Файл Components
 
-        subBtn:HTMLButton - конопка отправки(далее)
+        2.1)Переключения класса, element - где переключить, className - какой класс переключить, force:
+            Если force задан как true
+            Класс будет обязательно добавлен, независимо от того, есть он уже у элемента или нет.
 
-        метод toggleButton - переключение статуса кнопки
+            Если force задан как false.
+            Класс будет обязательно удален, независимо от того, есть он у элемента или нет.
 
-    #### 1.7 formOrderPaymentAddress - наследник form
+            toggleClass(element: HTMLElement, className: string, force?: boolean) {
+                element.classList.toggle(className, force);
+            }
+        2.2)Установить текстовое содержимое
+            protected setText(element: HTMLElement, value: unknown) {
+                if (element) {
+                    element.textContent = String(value);
+                }
+            }
 
-        onlineBtn: HTMLButton,
-        offlineBtn: HTMLButton,
-        payment: TPaymentType, - сохранение выбора оплаты
-        address: HTMLInputElement
+        2.3)  // Сменить статус блокировки
+            setDisabled(element: HTMLElement, state: boolean) {
+                if (element) {
+                    if (state) element.setAttribute('disabled', 'disabled');
+                    else element.removeAttribute('disabled');
+                }
+            }
+        2.4)    // Скрыть
+            protected setHidden(element: HTMLElement) {
+                element.style.display = 'none';
+            }
 
-        методы: 
+        2.5)    // Показать
+            protected setVisible(element: HTMLElement) {
+                element.style.removeProperty('display');
+            }
 
-        setPayment - сохраняяет способ оплаты
-        setAddress - сохраняет адресс
-        validation(onlineBtn: HTMLButton, offlineBtn: HTMLButton, address: HTMLInputElement) - валидация
-    #### 1.8 formEmailNumber - - наследник form
+        2.6)   // Установить изображение с алтернативным текстом
+            protected setImage(element: HTMLImageElement, src: string, alt?: string) {
+                if (element) {
+                    element.src = src;
+                    if (alt) {
+                        element.alt = alt;
+                    }
+                }
+            }
 
-        email: HTMLInputElement, 
-        phone: HTMLInputElement,
+        2.7) Рендер элемента. получает на вход объект.
+            render(data?: Partial<T>): HTMLElement {
+                Object.assign(this as object, data ?? {});
+                return this.container;
+            }
 
-        методы
+    3) utils
 
-        setEmail - сохраняяет email
-        setPhone - сохраняет номер
-        validation(email: HTMLInputElement, phone: HTMLInputElement,) - валидация
-    
-    #### 1.9 succesForm - класс наслденик Modal
-        succesBtn:HTMLElement - кнопка успеха
-        descr: HTMLElement - поле вставки текста успеха
-
-        метод
-         render(data:{number}) - рендер со суммой списания
-
-    #### 1.10 basket - корзина наследник Modal
-        list: HTMLElement - список товаров
-        total: HTMLElement - общая сумма
-        button: HTMLButtonElement - кнопка для оформления
-
-        мметоды
-
-        items(items: HTMLElement[]) - заполнение корзины
-        price(num: number) - вставка общей суммы
-        toggleBtn - изменение кнопки(если пусто в корзине, то блокировка)
-    #### 1.11
-        Page - класс страницы наследник universalElement
-
-        counter: HTMLElement - кол-во в корзине
-        productsWrap: HTMLElement - обертка для товаров
-
-    
-       counter(value: number) - установка кол-ва в корзине
-       catalog(items: HTMLElement[]) - вставка на страницу товары
-       
-## Presenter
-    EventEmitter - связь между modal и view. работа с событиями
-
-    Установить обработчик на событие
-    on<T extends object>(eventName: EventName, callback: (event: T) => void)
-
-    Снять обработчик с события
-    off(eventName: EventName, callback: Subscriber)
-
-    Инициировать событие с данными
-    emit<T extends object>(eventName: string, data?: T)
-
-    Слушать все события
-    onAll(callback: (event: EmitterEvent) => void)
-
-    Сбросить все обработчики
-    offAll()
-
-    Сделать коллбек триггер, генерирующий событие при вызове
-    trigger<T extends object>(eventName: string, context?: Partial<T>)
+        3.1) Преобразует строку из формата PascalCase (например, SomeText) в kebab-case (например, some-text).
+            export function pascalToKebab(value: string): string {
+                return value.replace(/([a-z0–9])([A-Z])/g, "$1-$2").toLowerCase();
+            }
+        3.2) isSelector - роверка, является ли значение допустимым CSS-селектором. 
+        3.3) isEmpty - Проверка, является ли значение null или undefined.
+        3.4) ensureAllElements - Преобразование селектора, NodeList или массива в массив элементов. (все .btn)
+        3.5) ensureElement - Получение одного элемента по селектору или проверка, что переданный элемент существует.
+        3.6) cloneTemplate - Клонирование содержимого HTML-шаблона.
+        3.7) bem - Генерация BEM-классов.
+        3.8) getObjectProperties -  Получение списка свойств и методов объекта.
+        3.9) setElementData - Установка data-* атрибутов.
+        3.10) getElementData - Получение данных из data-* атрибутов с преобразованием типов.
+        3.11) isPlainObject - Проверка, является ли объект "простым".
+        3.12) isBoolean - Проверка, является ли значение булевым.
+        3.13) createElement - Создание DOM-элементов с настройкой свойств и дочерних элементов.

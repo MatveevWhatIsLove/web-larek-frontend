@@ -34,6 +34,7 @@ export class EventEmitter implements IEvents {
         }
         this._events.get(eventName)?.add(callback);
     }
+    
 
     /**
      * Снять обработчик с события
