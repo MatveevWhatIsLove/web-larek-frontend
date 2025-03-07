@@ -20,9 +20,13 @@ import { Component} from './components/base/Component';
 
 import {ApiListResponse , ApiPostMethods, Api } from './components/base/api'
 
-import { EventEmitter, events } from './components/base/events';
+import { EventEmitter, events , IEvents} from './components/base/events';
 
 import { getProductApi } from './components/modal/getProductApi';
+
+
+const modal = document.querySelector('.modal') as HTMLDivElement;
+const modalContent = modal.querySelector('.modal__content');
 
 // export interface IProduct{
 //     id:string,
@@ -68,16 +72,20 @@ const categorySetting  = {
 }
 
 events.on('cardGalaryClicked', (item: IProductFull)=>{
-    console.log('клик по карточке с id: ',  item.id);
-
-    
+    const prevCard = cloneTemplate('#card-preview');
+    const newModal = new Modal(ensureElement('#modal-container'), events);
+    newModal.content = new PrevCardView(prevCard, events).render(item);
+    newModal.render();
+    newModal.open();
 })
 
 events.on('dataLoaded', (data:IProductsFromApi)=>{
-    data.items.forEach((item)=>{
+    data.items.forEach((item : IProductGalery)=>{
         const cardTemplate = cloneTemplate('#card-catalog');
-        const newCard = new GalleryCardView(cardTemplate).render(item);
-        newCard.addEventListener('click', e=>{
+        const newCard = new GalleryCardView(cardTemplate, events).render(item as IProductGalery);
+        // const galleryItem = item:
+        console.log();
+        newCard.addEventListener('click', ()=>{
             events.emit('cardGalaryClicked', item);
         })
         document.querySelector('.gallery').appendChild(newCard);
@@ -94,7 +102,7 @@ class CardBasket extends Component<IProductBasket>{
     // private _category: HTMLSpanElement;
     private _price: HTMLSpanElement;
 
-    constructor(container: HTMLElement){
+    constructor(container: HTMLElement, protected events: IEvents){
         super(container);
         this._price = ensureElement('.card__price', this.container);
         // this._id = setElementData(this.container, id) 
@@ -137,12 +145,12 @@ class CardBasket extends Component<IProductBasket>{
     }
 }
 
-class GalleryCardView extends CardBasket{
+class GalleryCardView extends CardBasket implements IProductGalery{
     private _image: HTMLImageElement;
     private _category: HTMLSpanElement;
     
-    constructor(container: HTMLElement){
-        super(container);
+    constructor(container: HTMLElement, protected events: IEvents){
+        super(container, events);
         this._image = ensureElement('.card__image', this.container) as HTMLImageElement;
         this._category = ensureElement('.card__category', this.container);
     }
@@ -162,8 +170,8 @@ class GalleryCardView extends CardBasket{
 
 class PrevCardView extends GalleryCardView{
     private _description: HTMLParagraphElement;
-    constructor(container: HTMLElement){
-        super(container);
+    constructor(container: HTMLElement, protected events: IEvents){
+        super(container, events);
         this._description = ensureElement('.card__text', this.container) as HTMLParagraphElement;
     }
 
@@ -173,8 +181,63 @@ class PrevCardView extends GalleryCardView{
 
 }
 
+export interface IModal{
+    open(): void;
+    close(): void;
+}
 
-//Экземпляр класса поулчения карточек
+class Modal extends Component<IModal>{
+    private _closeBtn : HTMLButtonElement;
+    private _content : HTMLDivElement;
+    private _pageWrap : HTMLDivElement;
+    
+    constructor(container: HTMLElement, protected events: IEvents){
+        super(container);
+        this._closeBtn = ensureElement('.modal__close', this.container) as HTMLButtonElement;
+        this._content = ensureElement('.modal__content', this.container) as HTMLDivElement;
+        this._pageWrap = document.querySelector('.page__wrapper') as HTMLDivElement;
+
+        this._closeBtn.addEventListener('click', (e)=>{
+            if((e.target instanceof HTMLButtonElement && e.target.classList.contains('modal__close'))){
+                this.close();
+            }
+        })
+
+        this.container.addEventListener('click', (e)=>{
+            if(e.target instanceof HTMLDivElement && e.target.classList.contains('modal_active')){
+                this.close();
+            }
+        })
+
+        window.addEventListener('keydown', (e)=>{
+            console.log(e.key);
+            if(e.key === 'Escape'){
+                this.close();
+            }
+        })
+    }
+
+    set content(elem: HTMLElement){
+        this._content.replaceChildren(elem);
+    }
+
+    open(){
+        this.container.classList.add('modal_active');
+        this._pageWrap.classList.add('page__wrapper_locked');
+    }
+
+    close(){
+        this.container.classList.remove('modal_active');
+        this._pageWrap.classList.remove('page__wrapper_locked');
+    }
+
+    // render(): HTMLElement {
+    //     this._content;
+    //     return this.container;
+    // }
+}
+
+
 const productsListApi = new getProductApi(API_URL, settings, CDN_URL);
 
 //Получение карточек и сработка слушателя, что данные полученны
