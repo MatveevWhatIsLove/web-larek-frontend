@@ -71,45 +71,59 @@ const categorySetting  = {
     'хард-скил': 'card__category_hard'
 }
 
-events.on('cardGalaryClicked', (item: IProductFull)=>{
-    const prevCard = cloneTemplate('#card-preview');
-    const newModal = new Modal(ensureElement('#modal-container'), events);
-    newModal.content = new PrevCardView(prevCard, events).render(item);
-    newModal.render();
-    newModal.open();
-})
 
-events.on('dataLoaded', (data:IProductsFromApi)=>{
-    data.items.forEach((item : IProductGalery)=>{
-        const cardTemplate = cloneTemplate('#card-catalog');
-        const newCard = new GalleryCardView(cardTemplate, events).render(item as IProductGalery);
-        // const galleryItem = item:
-        console.log();
-        newCard.addEventListener('click', ()=>{
-            events.emit('cardGalaryClicked', item);
-        })
-        document.querySelector('.gallery').appendChild(newCard);
-    })
-})
 
-// Отображение карточек
+// MODAL
+class ModalBasket {
+    private _productsInBasket : IProductBasket[];
+
+    constructor(){
+        this._productsInBasket = [];
+    }
+
+    addProductToBasket(item: IProductBasket){
+        this._productsInBasket.push(item);
+        console.log(this._productsInBasket);
+        return this._productsInBasket;
+    }
+
+    removeProductFromBusket(item : IProductBasket){
+        this._productsInBasket.forEach((product)=>{
+            if(product.id = item.id){
+                const productToDel = this._productsInBasket.indexOf(product);
+                this._productsInBasket.slice(productToDel, 1);
+            }
+        });
+        return this._productsInBasket;
+    }
+
+    getSumOfProducts(){
+        let sum = 0;
+        this._productsInBasket.forEach((prodct) => {
+            if(prodct.price !== null){
+                sum += prodct.price;
+            } else {
+                sum += 0;
+            }
+        });
+
+        return sum;
+    }
+}
+
+const BasketModal = new ModalBasket;
+
+//VIEW Отображение карточек
 
 class CardBasket extends Component<IProductBasket>{
     private _id:string;
-    // private _description: HTMLParagraphElement;
-    // private _image: HTMLImageElement;
     private _title: HTMLTitleElement;
-    // private _category: HTMLSpanElement;
     private _price: HTMLSpanElement;
 
     constructor(container: HTMLElement, protected events: IEvents){
         super(container);
         this._price = ensureElement('.card__price', this.container);
-        // this._id = setElementData(this.container, id) 
-        // this._description = ensureElement('.card__text', this.container) as HTMLParagraphElement;
-        // this._image = ensureElement('.card__image', this.container) as HTMLImageElement;
         this._title = ensureElement('.card__title', this.container) as HTMLTitleElement;
-        // this._category = ensureElement('.card__category', this.container);
     }
 
     set price(price: number | null){
@@ -120,25 +134,9 @@ class CardBasket extends Component<IProductBasket>{
         }
         
     }
-
-    // set description(description: string){
-    //     this.setText(this._description, description);
-    // }
-
-    // set image(image: string){
-    //    this.setImage(this._image, image);
-    // }
-
     set title(title: string){
         this.setText(this._title, title);
     }
-
-    // set category(category: string){
-    //     this.setText(this._category, category);
-    //     if(category in categorySetting){
-    //         this.toggleClass(this._category, categorySetting[category as keyof typeof categorySetting]);
-    //     }
-    // }
 
     set id(id: string){
         this._id = id;
@@ -170,9 +168,16 @@ class GalleryCardView extends CardBasket implements IProductGalery{
 
 class PrevCardView extends GalleryCardView{
     private _description: HTMLParagraphElement;
+    // private _buttonToBasket : HTMLButtonElement;
     constructor(container: HTMLElement, protected events: IEvents){
         super(container, events);
         this._description = ensureElement('.card__text', this.container) as HTMLParagraphElement;
+        // this._buttonToBasket = ensureElement('.button', this.container) as HTMLButtonElement;
+
+        // this._buttonToBasket.addEventListener('click', ()=>{
+        //     events.emit('sendToBasket');
+        // })
+        
     }
 
     set description(description: string){
@@ -230,13 +235,34 @@ class Modal extends Component<IModal>{
         this.container.classList.remove('modal_active');
         this._pageWrap.classList.remove('page__wrapper_locked');
     }
-
-    // render(): HTMLElement {
-    //     this._content;
-    //     return this.container;
-    // }
 }
 
+// {\r\n    \"payment\": \"online\",\r\n    \"email\": \"test@test.ru\",\r\n    \"phone\": \"+71234567890\",\r\n    \"address\": \"Spb Vosstania 1\",\r\n    \"total\": 2200,\r\n    \"items\": [\r\n        \"854cef69-976d-4c2a-a18c-2aa45046c390\",\r\n        \"c101ab44-ed99-4a54-990d-47aa2bb4e7d9\"\r\n    ]\r\n}"
+
+interface IPostOrder {
+    'payment' : 'online' | 'ofline',
+    'email' : string,
+    'phone' : string,
+    'address' : string,
+    'total' : number,
+    'items' : string[];
+}
+
+// class productPostApiBasket extends Api{
+//     itemId: IProductFull;
+
+//     constructor(baseUrl: string, options: RequestInit = {}, itemId:IProductFull){
+//         super(baseUrl, options);
+//         this.itemId = itemId;
+//     }
+// // : Promise<IPostOrder>
+//     postProductApi (){
+//         return this.post('/order', this.itemId)
+//         .then((data : IPostOrder)=>{
+//             return data;
+//         })
+//     }
+// }
 
 const productsListApi = new getProductApi(API_URL, settings, CDN_URL);
 
@@ -245,3 +271,38 @@ productsListApi.getProdutList()
     .then(data => {
         events.emit('dataLoaded', (data));
     })
+
+events.on('sendToBasket', (item: IProductFull) => {
+    const ItemToBasket : IProductBasket = {
+        'id' : item.id,
+        'price' : item.price,
+        'title' : item.title
+    }
+
+    BasketModal.addProductToBasket(ItemToBasket);
+
+})
+
+events.on('cardGalaryClicked', (item: IProductFull)=>{
+    const prevCard = cloneTemplate('#card-preview');
+    const newModal = new Modal(ensureElement('#modal-container'), events);
+    newModal.content = new PrevCardView(prevCard, events).render(item); 
+    const modalCardBtnToBasket = ensureElement('.button', newModal.content);
+    modalCardBtnToBasket.addEventListener('click', ()=>{
+        events.emit('sendToBasket', item);
+    })
+
+    newModal.render();
+    newModal.open();
+})
+
+events.on('dataLoaded', (data:IProductsFromApi)=>{
+    data.items.forEach((item : IProductGalery)=>{
+        const cardTemplate = cloneTemplate('#card-catalog');
+        const newCard = new GalleryCardView(cardTemplate, events).render(item as IProductGalery);
+        newCard.addEventListener('click', ()=>{
+            events.emit('cardGalaryClicked', item);
+        })
+        document.querySelector('.gallery').appendChild(newCard);
+    })
+})
