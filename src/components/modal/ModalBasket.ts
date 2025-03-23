@@ -1,6 +1,5 @@
 import { ImodalBasket, IProductBasket } from "../../types/types";
 
-// MODAL
 export class ModalBasket implements ImodalBasket{
     protected _basketCount: HTMLSpanElement;
     protected _productsInBasket: IProductBasket[];
