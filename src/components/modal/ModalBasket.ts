@@ -9,14 +9,11 @@ export class ModalBasket implements ImodalBasket{
     }
     addProductToBasket(item: IProductBasket){
         this._productsInBasket.push(item);
-        console.log(this._productsInBasket);
-        this.setCountBasket();
         return this._productsInBasket;
     }
 
     removeProductFromBusket(itemId : string) {
         this._productsInBasket = this._productsInBasket.filter(product => product.id !== itemId);
-        this.setCountBasket();
         return this._productsInBasket;
     }
 
@@ -38,17 +35,12 @@ export class ModalBasket implements ImodalBasket{
         return basketCount
     }
 
-    setCountBasket(){
-        this._basketCount.textContent = this.getCountBasket().toString();
-    }
-
     getBasketItems(){
         return this._productsInBasket
     }
 
     clear(){
         this._productsInBasket = [];
-        this.setCountBasket();
     }
 }
 

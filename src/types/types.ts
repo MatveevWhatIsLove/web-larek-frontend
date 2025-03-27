@@ -8,17 +8,11 @@ export type orderList = {
     items: string[]
 }
 
-export interface IPage{
-    'cards' : IProductFull[],
-    'basketCount' : number
-}
-
 export interface ImodalBasket{
     addProductToBasket(item:IProductBasket): IProductBasket[];
     removeProductFromBusket(itemId : string):IProductBasket[];
     getSumOfProducts(): number;
     getCountBasket():number;
-    setCountBasket(): void;
     getBasketItems():IProductBasket[];
     clear():void;
 }
@@ -121,4 +115,9 @@ export interface order {
 export interface IOrderResult {
     id: string;
     total: number;
+}
+
+export interface IPage {
+    galary : HTMLElement;
+    basketCount : string;
 }

@@ -25,6 +25,5 @@ export class ProductApi extends Api{
 
     postOrder(data : order): Promise<IOrderResult>{
         return this.post('/order', data).then((result : IOrderResult) => result)
-
     }
 }

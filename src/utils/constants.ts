@@ -14,3 +14,4 @@ export const categorySetting  = {
 	'кнопка': 'card__category_button',
 	'хард-скил': 'card__category_hard'
 }
+

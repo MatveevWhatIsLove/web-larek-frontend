@@ -27,7 +27,7 @@ export class BasketView extends Component<IBasketView>{
         this.setText(this._basketTitle, title);
     }
 
-    set basketBrn(status : boolean){
+    set basketBtn(status : boolean){
         this.setDisabled(this._basketBtn, status);
     }
 
