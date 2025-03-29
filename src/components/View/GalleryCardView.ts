@@ -11,23 +11,16 @@ export class GalleryCardView extends Component<IProductGalery> implements IProdu
     protected _id: string;
     protected _title: HTMLTitleElement;
     protected _price: HTMLSpanElement;
-    protected clickHandler : (event : MouseEvent) => void;
-    constructor(container: HTMLElement, protected events: IEvents,  onClicked : (event : MouseEvent) => void){
+    protected _onClicked : (e : MouseEvent) => void;
+    constructor(container: HTMLElement, protected events: IEvents,  onClicked : () => void){
         super(container);
         this._price = ensureElement('.card__price', this.container);
         this._title = ensureElement('.card__title', this.container) as HTMLTitleElement;
         this._image = ensureElement('.card__image', this.container) as HTMLImageElement;
         this._category = ensureElement('.card__category', this.container);
-        this.clickHandler = (e) => {
-            onClicked(e);
-        };
-        this.container.addEventListener('click', (e)=> this.clickHandler(e))
-        
+        this._onClicked = onClicked;
 
-    }
-
-    destroy() {
-        this.container.removeEventListener('click', this.clickHandler);
+        this.container.addEventListener('click', (e)=> this._onClicked(e));
     }
 
     set image(image: string){

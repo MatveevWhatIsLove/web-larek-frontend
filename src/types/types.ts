@@ -3,12 +3,8 @@ export type IProductsFromApi = {
     items: IProductFull[];
 }
 
-export type orderList = {
-    total: number,
-    items: string[]
-}
 
-export interface ImodalBasket{
+export interface IModelBasket{
     addProductToBasket(item:IProductBasket): IProductBasket[];
     removeProductFromBusket(itemId : string):IProductBasket[];
     getSumOfProducts(): number;
@@ -118,6 +114,6 @@ export interface IOrderResult {
 }
 
 export interface IPage {
-    galary : HTMLElement;
+    gallery : HTMLElement;
     basketCount : string;
 }

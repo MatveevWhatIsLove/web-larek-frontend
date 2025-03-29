@@ -37,30 +37,18 @@ export class Modal extends Component<IModal>{
         this._content.replaceChildren(elem);
     }
 
+    get content(){
+        return this._content;
+    }
+
     open(){
         this.container.classList.add('modal_active');
         this.events.emit('modalOpen');
-        // this._pageWrap.classList.add('page__wrapper_locked');
     }
 
     close(){
-        this.events.emit('modalClose');
+        this._content.replaceChildren();
         this.container.classList.remove('modal_active');
-        // this._pageWrap.classList.remove('page__wrapper_locked');
-        const isChildForm = this._content.firstElementChild.classList.contains('form');
-        if(isChildForm){
-            const form = ensureElement('.form', this._content) as HTMLFormElement;
-            form.reset();
-            if(form.getAttribute('name') === 'order'){
-                
-                const buttons = form.querySelectorAll('.button_alt')
-                buttons.forEach((btn)=>{
-                    if(btn.classList.contains('button_alt-active')){
-                        btn.classList.remove('button_alt-active');
-                    }
-                })
-            }
-        }
-        
+        this.events.emit('modalClose');
     }
 }

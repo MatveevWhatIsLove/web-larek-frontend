@@ -7,11 +7,11 @@ import {API_URL, CDN_URL, settings} from './utils/constants';
 
 import {events} from './components/base/events';
 
-import { ProductApi } from './components/modal/ProductApi';
+import { ProductApi } from './components/model/ProductApi';
 
-import { orderList, IOrderResult, IProductFull, IProductBasket, IProductsFromApi, IProductGalery, IOrder } from './types/types';
+import { IProductFull, IProductBasket, IProductGalery } from './types/types';
 
-import { ModalBasket } from './components/modal/ModalBasket';
+import { BasketModel } from './components/model/BasketModel';
 
 import { CardBasket } from './components/View/CardBasket';
 
@@ -19,7 +19,7 @@ import { GalleryCardView } from './components/View/GalleryCardView';
 
 import { PrevCardView } from './components/View/PrevCardView';
 
-import { orderModal } from './components/modal/orderModal';
+import { orderModel } from './components/model/OrderModel';
 
 import { Success } from './components/View/Success';
 
@@ -31,18 +31,15 @@ import { BasketView } from './components/View/BasketView';
 
 import { Modal } from './components/View/Modal';
 
-import { CardsModal } from './components/modal/CardsModal';
+import { CardsModel } from './components/model/CardsModel';
 
 import { Page } from './components/View/PageView';
 
-
-const prevCard = cloneTemplate('#card-preview');
-
-const modalCards = new CardsModal;
-const basketModal = new ModalBasket;
-const modalOrder = new orderModal;
+const modalCards = new CardsModel;
+const basketModel = new BasketModel;
+const modelOrder = new orderModel;
 const productsListApi = new ProductApi(API_URL, settings, CDN_URL);
-const newBasket = new BasketView(cloneTemplate('#basket'), ()=>{events.emit('createOrder')});
+const newBasket = new BasketView(cloneTemplate('#basket'), ()=>{events.emit('openFormFirst')});
 const newModal = new Modal(ensureElement('#modal-container'), events);
 
 const formAdressPay = new FormAdressPay(cloneTemplate('#order'));
@@ -52,10 +49,6 @@ const formEmailPhone = new FormForContacts(cloneTemplate('#contacts'));
 const newPage = new Page(document.body, events);
 
 const newSuc = new Success(cloneTemplate('#success'));
-
-let newCard : GalleryCardView | null = null;
-
-let newCardPrev : PrevCardView | null = null;
 
 
 
@@ -70,49 +63,46 @@ productsListApi.getProdutList()
 
 // отображение страницы с карточками и корзиной
 events.on('dataLoaded', ()=>{
-    if(newCard){
-        newCard.destroy();
-    }
     modalCards.cardsItem.forEach((item : IProductFull)=>{
-        newCard = new GalleryCardView(cloneTemplate('#card-catalog'), events, () =>{events.emit('cardGalaryClicked', item)});
-        newPage.galary = newCard.render(item as IProductGalery) as HTMLButtonElement;
+        const newCard = new GalleryCardView(cloneTemplate('#card-catalog'), 
+                                            events,
+                                                () =>{events.emit('cardGalaryClicked', item);
+                                                    console.log(item);
+                                                }
+                                            );
+        newPage.gallery = newCard.render(item as IProductGalery) as HTMLButtonElement;
     });
-    newPage.basketCount = basketModal.getCountBasket().toString();
+    newPage.basketCount = basketModel.getCountBasket().toString();
     newPage.render();
 })
 
 // клик по карточек с удалением слушателя
 events.on('cardGalaryClicked', (item: IProductFull)=>{
-
-    if(newCardPrev){
-        newCardPrev.destroy();
-    }
-
-    newCardPrev = new PrevCardView(prevCard, events, ()=> {events.emit('sendToBasket', item)});
-    const isCardInBasket =  basketModal.getBasketItems().some(prod => prod.id === item.id)
+    const  newCardPrev = new PrevCardView('#card-preview', events, () => {events.emit('sendToBasket', item)});
+    const isCardInBasket =  basketModel.getBasketItems().some(prod => prod.id === item.id)
     newCardPrev.buttonToBasket = !isCardInBasket
-    
     newModal.content = newCardPrev.render(item); 
     newModal.render();
     newModal.open();
-})
+});
+
 
 // добавление товара в корзину
 events.on('sendToBasket', (item: IProductFull) => {
-    if(!basketModal.getBasketItems().some(prod => prod.id === item.id)){
+    if(!basketModel.getBasketItems().some(prod => prod.id === item.id)){
         const ItemToBasket : IProductBasket = {
             'id' : item.id,
             'price' : item.price,
             'title' : item.title
         }
-        basketModal.addProductToBasket(ItemToBasket);
-        newPage.basketCount = basketModal.getCountBasket().toString();
+        basketModel.addProductToBasket(ItemToBasket);
+        newPage.basketCount = basketModel.getCountBasket().toString();
     }
 })
 
 // клик по корзине
 events.on('basketClicked', ()=>{
-    const basketItems = basketModal.getBasketItems();
+    const basketItems = basketModel.getBasketItems();
 
     // Отображение товаров в корзине и событие их удаления
     newBasket.items  = basketItems.map((item)=>{
@@ -123,11 +113,11 @@ events.on('basketClicked', ()=>{
         return newCardBasket.render(item);
     })
 
-    const isBasketClear = basketItems.length === 0 || basketModal.getSumOfProducts() === 0;
+    const isBasketClear = basketItems.length === 0 || basketModel.getSumOfProducts() === 0;
     newBasket.basketBtn = isBasketClear;
     
     newBasket.title = isBasketClear ? 'Корзина пуста' : 'Корзина';
-    newBasket.price = basketModal.getSumOfProducts();
+    newBasket.price = basketModel.getSumOfProducts();
 
     newModal.content = newBasket.render();
     newModal.render();
@@ -136,25 +126,19 @@ events.on('basketClicked', ()=>{
 
 // удаление карточки из корзины
 events.on('basketDeleteItem', ({id} : {'id': string})=>{
-    basketModal.removeProductFromBusket(id);
-    newPage.basketCount = basketModal.getCountBasket().toString();
+    basketModel.removeProductFromBusket(id);
+    newPage.basketCount = basketModel.getCountBasket().toString();
     events.emit('basketClicked');
 })
 
-// сохрарнеие товара и суммы для оформления + событие откртия формы адреса и способа оплаты
-events.on('createOrder',()=>{
-    const orderItems : orderList = {
-        total : basketModal.getSumOfProducts(),
-        items : basketModal.getBasketItems().filter(item => item.price !== null).map(item => item.id)
-    }
-    modalOrder.total= orderItems.total;
-    modalOrder.items= orderItems.items;
-    events.emit('openFormFirst'); 
-})
+// // сохрарнеие товара и суммы для оформления + событие откртия формы адреса и способа оплаты
+// events.on('createOrder',()=>{
+//     events.emit('openFormFirst'); 
+// })
 
 
 events.on('openFormFirst',() => {
-    modalOrder.clearAdressPay();
+    modelOrder.clearAdressPay();
     formAdressPay.clearForm();
     newModal.content = formAdressPay.render();
     newModal.render();
@@ -165,14 +149,14 @@ events.on('openFormFirst',() => {
     // НАЧАЛО
 // способ оплаты в модель
 events.on('sendPay', (btn : HTMLButtonElement)=>{ 
-    modalOrder.payment = btn.name;
-    modalOrder.validateFormAdressPay();
+    modelOrder.payment = btn.name;
+    modelOrder.validateFormAdressPay();
 });
 // адрес в модель
 
 events.on('sendAddress', (addressInput : HTMLInputElement) => {
-    modalOrder.setInputAddress(addressInput.value);
-    modalOrder.validateFormAdressPay();
+    modelOrder.setInputAddress(addressInput.value);
+    modelOrder.validateFormAdressPay();
 });
 
 events.on('showErrorsArdess', (errors : {address : string}) =>{
@@ -190,7 +174,7 @@ events.on('formArdessTrue', (errors : {address : string})=>{
 // ФОРМА ПОЧТЫ И ТЕЛЕФОНА
     // НАЧАЛО
 events.on('openSecondForm', ()=>{
-    modalOrder.clearEmailPhone();
+    modelOrder.clearEmailPhone();
     formEmailPhone.clear();
     newModal.content = formEmailPhone.render();
     newModal.render();
@@ -198,13 +182,13 @@ events.on('openSecondForm', ()=>{
 })
 
 events.on('sendEmail', (formEmailInput : HTMLInputElement) =>{
-    modalOrder.setInputEmail(formEmailInput.value);
-    modalOrder.validateFormEmailPhone();
+    modelOrder.setInputEmail(formEmailInput.value);
+    modelOrder.validateFormEmailPhone();
 })
 
 events.on('sendPhone', (phone :{num : string})=>{
-    modalOrder.setInputNumb(phone.num);
-    modalOrder.validateFormEmailPhone();
+    modelOrder.setInputNumb(phone.num);
+    modelOrder.validateFormEmailPhone();
 })
 
 events.on('showErrorsFormEmailPhone', (errors : {number : string, email : string}) =>{
@@ -223,17 +207,14 @@ events.on('formArdessTrueFormEmailPhone', (errors : {number : string, email : st
 
 // Отпарвка заказа и отображения успеха
 events.on('sendOrder', ()=>{
-    productsListApi.postOrder(modalOrder.getOrderFull())
+    modelOrder.total= basketModel.getSumOfProducts();
+    modelOrder.items= basketModel.getBasketItems().filter(item => item.price !== null).map(item => item.id);
+    productsListApi.postOrder(modelOrder.getOrderFull())
         .then((res)=>{
             newSuc.orderSuccessDescription = res.total;
             newModal.content = newSuc.render();
-            const originalClose = newModal.close.bind(newModal); // Сохраняем оригинальный метод
-            newModal.close = function() {
-                basketModal.clear(); // Вызываем clear()
-                newPage.basketCount = basketModal.getCountBasket().toString();
-                originalClose(); // Вызываем оригинальный метод close
-                newModal.close = originalClose;
-            };
+            basketModel.clear(); // Вызываем clear()
+            newPage.basketCount = basketModel.getCountBasket().toString();
             newModal.render();
             newModal.open();
         })
@@ -244,8 +225,8 @@ events.on('sendOrder', ()=>{
 
 // закрытие успеха
 events.on('closeSucBtn', ()=>{
-    basketModal.clear();
-    newPage.basketCount = basketModal.getCountBasket().toString();
+    basketModel.clear();
+    newPage.basketCount = basketModel.getCountBasket().toString();
     newModal.close();
 })
 

@@ -1,7 +1,7 @@
 import { IOrder } from "../../types/types";
 import { events } from "../base/events";
 
-export class orderModal implements IOrder{
+export class orderModel implements IOrder{
     protected _payment: string;
     protected _email: string;
     protected _phone: string ;

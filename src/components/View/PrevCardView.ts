@@ -1,6 +1,6 @@
 import { IProductFull } from "../../types/types";
 import { Component } from "../base/Component";
-import { ensureElement } from "../../utils/utils";
+import { cloneTemplate, ensureElement } from "../../utils/utils";
 import { IEvents } from "../base/events";
 import { categorySetting } from "../../utils/constants";
 
@@ -12,27 +12,35 @@ export class PrevCardView extends Component<IProductFull> implements IProductFul
     protected _title: HTMLTitleElement;
     protected _price: HTMLSpanElement;
     protected _buttonToBasket : HTMLButtonElement;
-    protected clickHandler : () => void
-    constructor(container: HTMLElement, protected events: IEvents, onClicked : () => void){
-        super(container);
+    protected _onClicked : (e : MouseEvent) => void
+    constructor(templ: string, protected events: IEvents, onClickedBtn : () => void){
+    super(cloneTemplate(templ));
         this._price = ensureElement('.card__price', this.container);
         this._title = ensureElement('.card__title', this.container) as HTMLTitleElement;
         this._image = ensureElement('.card__image', this.container) as HTMLImageElement;
         this._category = ensureElement('.card__category', this.container);
         this._description = ensureElement('.card__text', this.container) as HTMLParagraphElement;
         this._buttonToBasket = ensureElement('.button', this.container) as HTMLButtonElement;
+        this._onClicked = onClickedBtn;
 
-        this.clickHandler = () => {
-            onClicked();
-            this.setDisabled(this._buttonToBasket, true);
-        };
 
-        this._buttonToBasket.addEventListener('click', this.clickHandler)  
+        this._buttonToBasket.addEventListener('click', (e)=>{
+            this._onClicked(e);
+            this.buttonToBasket = false;
+        } )  
     }
 
-    destroy() {
-        this._buttonToBasket.removeEventListener('click', this.clickHandler);
-    }
+    
+    // removeEventsListener(){
+    //     this._buttonToBasket.addEventListener('click', (e)=>{
+    //          events.emit('sendToBasket', {
+    //         'id' : this._id,
+    //         'price' : this._price,
+    //         'title' : this._title})
+    //         // this._onClicked(e);
+    //         this.buttonToBasket = false;
+    //     } )  
+    // }
 
     set buttonToBasket(status : boolean){
         if(status){

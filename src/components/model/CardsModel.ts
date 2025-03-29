@@ -1,7 +1,7 @@
-import { IProductFull } from "../../types/types"
-import { events } from "../base/events";
+import { IProductFull} from "../../types/types"
+import { events} from "../base/events";
 
-export class CardsModal{
+export class CardsModel{
     protected _cardsItem : IProductFull[];
     constructor(){
         this._cardsItem = []
@@ -15,4 +15,5 @@ export class CardsModal{
     get cardsItem(){
         return this._cardsItem;
     }
+
 }

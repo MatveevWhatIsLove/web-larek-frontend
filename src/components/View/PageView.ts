@@ -5,14 +5,14 @@ import { IPage } from "../../types/types";
 
 
 export class Page extends Component<IPage> implements IPage{
-    protected _galary : HTMLElement;
+    protected _gallery : HTMLElement;
     protected _basket : HTMLButtonElement;
     protected _basketCount : HTMLSpanElement;
     protected _pageWrap : HTMLDivElement;
 
     constructor(container: HTMLElement, protected events: IEvents){
         super(container);
-        this._galary = ensureElement('.gallery', this.container) as HTMLElement;
+        this._gallery = ensureElement('.gallery', this.container) as HTMLElement;
         this._basket = ensureElement('.header__basket', this.container) as HTMLButtonElement;
         this._basketCount = ensureElement('.header__basket-counter', this.container);
         this._pageWrap = ensureElement('.page__wrapper', this.container) as HTMLDivElement;
@@ -22,8 +22,8 @@ export class Page extends Component<IPage> implements IPage{
         })
     }
 
-    set galary(card: HTMLButtonElement){
-        this._galary.appendChild(card);
+    set gallery(card: HTMLButtonElement){
+        this._gallery.appendChild(card);
     }
 
     set basketCount(num : string){

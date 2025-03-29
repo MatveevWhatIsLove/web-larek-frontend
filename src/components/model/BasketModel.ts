@@ -1,11 +1,9 @@
-import { ImodalBasket, IProductBasket } from "../../types/types";
+import { IModelBasket, IProductBasket } from "../../types/types";
 
-export class ModalBasket implements ImodalBasket{
-    protected _basketCount: HTMLSpanElement;
+export class BasketModel implements IModelBasket{
     protected _productsInBasket: IProductBasket[];
     constructor(){
         this._productsInBasket = [];
-        this._basketCount = document.querySelector('.header__basket-counter') as HTMLSpanElement;
     }
     addProductToBasket(item: IProductBasket){
         this._productsInBasket.push(item);
